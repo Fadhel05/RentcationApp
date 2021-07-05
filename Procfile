@@ -1,0 +1,1 @@
+web: gunicorn Rentcation.wsgi --log-file -
