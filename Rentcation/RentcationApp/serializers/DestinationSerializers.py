@@ -1,6 +1,8 @@
+from collections import defaultdict
+
 from rest_framework import serializers
 
-from Rentcation.RentcationApp.models import UserModel, CategoryModel, DestinationModel, ImageModel
+from Rentcation.RentcationApp.models import UserModel, CategoryModel, DestinationModel, ImageModel, ReviewModel
 from Rentcation.RentcationApp.serializers.ImageSerializers import ImageSerializerProduct
 
 
@@ -14,6 +16,7 @@ class DestinationSerializer(serializers.Serializer):
     prices = serializers.SerializerMethodField("pricec")
     city = serializers.CharField(max_length=20)
     address = serializers.CharField(max_length=50)
+    rating = serializers.SerializerMethodField("get_rating",allow_null=True)
     latitude = serializers.FloatField()
     longtitude = serializers.FloatField()
     description = serializers.CharField(max_length=255)
@@ -21,7 +24,19 @@ class DestinationSerializer(serializers.Serializer):
     class Meta:
         model = DestinationModel
         exlude = []
-
+    def get_rating(self,obj):
+        try:
+            p = ReviewModel.objects.filter(id_booking__data_id=obj.id,id_booking__id_category__name=obj.id_category.name).values("rating")
+            if len(p)>0:
+                x = defaultdict(list)
+                for y in list(p):
+                    for a,b in y.items():
+                        x[a].append(b)
+                return "%.2f" % (sum(x["rating"])/len(x["rating"]))+ " / " + "5"
+            return None
+        except Exception as e:
+            print(str(e))
+            return None
     def create(self, validated_data):
         imageg = validated_data.pop("imagemodel_set")
         respon = DestinationModel.objects.create(**validated_data)
